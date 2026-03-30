@@ -27,21 +27,36 @@ int main() {
         return -1;
     }
 
-    // SPI initialisation. This example will use SPI at 1MHz.
-    spi_init(SPI_PORT, 75000*1000);
-    gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
-    gpio_set_function(PIN_CS,   GPIO_FUNC_SIO);
+    // SPI initialisation. 75mhz is apparently the sweet spot here
+    spi_init(SPI_LCD, 75000*1000);
+    gpio_set_function(LCD_MISO, GPIO_FUNC_SPI);
+    gpio_set_function(LCD_CS,   GPIO_FUNC_SIO);
     gpio_set_function(PIN_SCK,  GPIO_FUNC_SPI);
-    gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
+    gpio_set_function(LCD_MOSI, GPIO_FUNC_SPI);
     
-    // Chip select is active-low, so we'll initialise it to a driven-high state
-    gpio_set_dir(PIN_CS, GPIO_OUT);
-    gpio_put(PIN_CS, 1);
-    // For more examples of SPI use see https://github.com/raspberrypi/pico-examples/tree/master/spi
+    // Chip select and reset are active-low, so initialise it to a driven-high state
+    gpio_set_dir(LCD_CS,  GPIO_OUT);
+    gpio_set_dir(LCD_RST, GPIO_OUT);
+    gpio_put(LCD_CS,  1);
+    gpio_put(LCD_RST, 1);
 
+    
 
     while (true) {
         printf("Hello, world!\n");
         sleep_ms(1000);
     }
+}
+
+void write_disp(uint8_t data, bool dcx){
+    if(&dcx) gpio_put(LCD_DC, 1);
+    gpio_put(LCD_CS, 1);
+    spi_write_blocking(SPI_LCD, &data, 8);
+    gpio_put(LCD_DC, 0);
+    gpio_put(LCD_CS, 0);
+}
+
+void init_disp(){
+    write_disp(0x53, false);
+    write_disp(0b00000100, true);
 }
